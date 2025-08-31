@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  hugo-base:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    ports:
+      - "3000:80"
+    container_name: hugo-base-module
+    restart: unless-stopped
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # Метаданные
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.hugo-base.rule=Host(`localhost`)"
+      - "traefik.http.services.hugo-base.loadbalancer.server.port=80"
+      - "org.opencontainers.image.title=hugo-base"
+      - "org.opencontainers.image.description=Educational module template"
+
+  # Для разработки - Hugo server с live reload
+  hugo-dev:
+    image: klakegg/hugo:0.148.0-ext-alpine
+    command: hugo server --bind 0.0.0.0 --buildDrafts --buildFuture
+    ports:
+      - "1313:1313"
+    volumes:
+      - .:/src
+    working_dir: /src
+    container_name: hugo-base-dev
+    profiles: ["dev"]
